@@ -82,11 +82,12 @@ No accounts. No email. No follow/DM/profile. The event is the center.
 
 ### Stack & shape
 
-- **Backend:** Go. HTTP server (stdlib or a thin router). JSON-over-HTTP API; no GraphQL.
-- **Frontend:** SolidJS SPA, built with Vite. Served as static assets by the Go server (or Caddy in front — see hosting).
-- **Database:** Postgres on Neon (managed, Singapore region, co-located with the droplet). Migrations via a tool chosen during the build (likely `goose` or `golang-migrate`).
-- **Object storage:** Cloudflare R2, exposed through Cloudflare CDN.
-- **Hosting:** DigitalOcean Droplet (Singapore, stateless) via Docker Compose: `go-app` + `caddy` + `redis` (provisional). All persistent state is in Neon (DB) and R2 (images); the droplet holds no state, so redeploys via `.env` + git are safe. See closed ticket #3.
+- **Backend:** TypeScript API running on Bun. JSON-over-HTTP API; no GraphQL. The HTTP framework and TypeScript migration runner are selected in the refreshed scaffold ticket (#7).
+- **Frontend:** SolidJS SPA written in TypeScript, built and run with Vite using Bun. It is a standalone frontend service, built and served separately from the API.
+- **Runtime boundary:** API and frontend are separate processes in development and separate services in production. The API serves JSON and health endpoints only; it does not serve frontend files or provide an SPA fallback. Vite proxies `/api/*` to the API in development. In production, Caddy routes the frontend paths to the static frontend and `/api/*` to the API under one browser origin, preserving cookie-based auth. A different public origin needs a separate decision about CORS and cookies.
+- **Database:** Postgres on Neon (managed, Singapore region, co-located with the droplet). Local development uses a developer-provided Postgres. SQL migrations run through a Bun/TypeScript-compatible tool chosen in the scaffold.
+- **Object storage:** Cloudflare R2, exposed through Cloudflare CDN. Upload tests use a dedicated bucket or explicitly configured S3-compatible endpoint.
+- **Hosting:** DigitalOcean Droplet (Singapore, stateless), with the Bun API as a native service and Caddy serving the separately built frontend while proxying `/api/*` to the API. All persistent state is in Neon (DB) and R2 (images); the droplet holds no state, so redeploys via `.env` + git are safe. Provider choices are in closed ticket #3; service setup is in deploy ticket #17.
 
 ### Data model (high-level, not names as final)
 
@@ -118,7 +119,7 @@ No accounts. No email. No follow/DM/profile. The event is the center.
   - **display image** (max ~2048px long edge, JPEG q~80).
 - Both stored in R2. **No raw originals in the MVP** (full-res returns as a premium-tier feature, post-MVP).
 - Wire `srcset` + `sizes` on the gallery `<img>` so browsers pick the right version (free, ticket #4 recommendation). Serve both versions through the CDN.
-- Pre-generation (on upload) vs on-the-fly transform location: decided during the build. Hosting is a single droplet (ticket #3), so an on-the-fly transform would run alongside the Go app on the box; the on-the-fly vs pre-gen decision is a small one left to the implementer of the upload slice.
+- Pre-generation (on upload) vs on-the-fly transform location: decided during the build. Hosting is a single droplet (ticket #3), so an on-the-fly transform would run alongside the Bun API service on the box; the on-the-fly vs pre-gen decision is left to the implementer of the upload slice.
 
 ### Gallery
 
@@ -148,8 +149,7 @@ No accounts. No email. No follow/DM/profile. The event is the center.
 
 ### Hosting / deploy
 
-- Docker Compose on the DO droplet: `go-app` + `caddy` + `redis` (provisional — only if a session store is needed; Neon may carry it in the DB).
-- Caddy handles TLS and reverse-proxies to the Go app; serves the SPA static assets.
+- Run the Bun API as a native service on the DO droplet; Caddy handles TLS, serves the frontend build independently, and routes `/api/*` to the API. The API does not serve the SPA or handle its history fallback.
 - `.env` + git reprovision the box. All state in Neon + R2.
 
 ### Out of scope — cross-reference
@@ -158,10 +158,10 @@ See `DECISIONS.md` "Out of scope" and the map's "Out of scope" section: cover ph
 
 ## Testing Decisions
 
-- **One seam: the HTTP API.** Handler-level integration tests in Go, using `httptest` against a real test Postgres (a test DB on Neon or a local instance) and a real test object storage (MinIO in place of R2) plus the real image pipeline. This is the highest seam that still covers the whole core loop as external behavior.
+- **One seam: the HTTP API.** Integration tests in TypeScript using Bun's test runner against the running API, a real test Postgres (a test DB on Neon or a local instance), and configured test object storage plus the real image pipeline. This is the highest seam that still covers the whole core loop as external behavior.
   - Good test = asserts on the HTTP response (status, body, headers, cookies) and on observable side effects in the DB / object storage. Doesn't assert on internal function calls or struct shapes.
   - Each test scenario reads like a user story (create event → claim admin → guest session → upload 3 → confirm → gallery shows them → feature → gallery reorders → close → upload rejected → expire → gallery 404s).
-- **MinIO stands in for R2** via the S3-compatible API; the app uses the S3 SDK against an interface so R2 and MinIO are swappable by config.
+- **Test storage:** use a dedicated R2 test bucket or another explicitly configured S3-compatible endpoint.
 - **A real test Postgres**, not a mock, so SQL and migrations are actually exercised.
 - **Frontend tests: out of scope for now.** The SPA is exercised indirectly via the API contract. We add Playwright later when the API seam can't catch client wiring. (User decision, this session.)
 - TDD at this seam: write a failing integration test for the next behavior in the slice, then make it pass.
@@ -176,8 +176,8 @@ See `DECISIONS.md` "Out of scope" and the map's "Out of scope" section: cover ph
 
 ## Further Notes
 
-- **Source of truth for locked decisions:** `DECISIONS.md`. This PRD restates them as user stories and build decisions; if the two ever conflict, `DECISIONS.md` wins.
-- **Wayfinder map:** issue #1. All decision tickets (#2–#5) closed; #1 retires when `/to-tickets` produces the build tracking issue.
+- **Source of truth for product decisions:** `DECISIONS.md`. This PRD restates them as user stories and build decisions; if the two ever conflict, `DECISIONS.md` wins. For the current implementation stack and service boundary, ADR 0008 is authoritative.
+- **Wayfinder map:** issue #1. Product research tickets (#2–#5) remain closed. Scaffold ticket #7 was reopened to rebuild the implementation with Bun and TypeScript.
 - **Hosting topology detail:** closed ticket #3.
 - **Image tiers detail:** closed ticket #4 (research branch `research/image-resolution-tiers`).
 - **Lifecycle detail:** closed ticket #5 (research branch `research/two-window-lifecycle`).

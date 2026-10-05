@@ -10,7 +10,15 @@ Proving it at a real ~200-guest event is the **next step after the MVP is live**
 
 ## Context
 
-Portfolio project **and** a potential business. Tech: **Go backend + SolidJS SPA (Vite). Postgres. Object storage (Cloudflare R2 or S3) + CDN** for images. Hosting topology is undecided (tracked as a ticket); the code is hosting-agnostic.
+Portfolio project **and** a potential business. Product scope is unchanged. The implementation stack is now **Bun + TypeScript for the API and frontend tooling, with a SolidJS SPA built by Vite**. Postgres. Object storage (Cloudflare R2 or S3) + CDN for images. The frontend and API are separate services: the API serves JSON only, and the frontend is built and served independently. See [ADR 0008](docs/adr/0008-bun-typescript-separate-frontend.md).
+
+## Architecture direction (2026-10-05)
+
+- **Backend:** TypeScript API running on Bun. The API owns `/api/*` and health endpoints; it does not serve the frontend bundle or provide an SPA fallback. The HTTP framework is selected in the refreshed scaffold ticket (#7).
+- **Frontend:** SolidJS SPA with Vite, written in TypeScript and installed, run, and built with Bun. It is an independently run and deployable frontend service, not a backend route.
+- **Runtime and browser origin:** local development runs the API and Vite frontend as separate processes. Production runs separate API and frontend services. Caddy routes the public site to the frontend and `/api/*` to the API under one browser origin, preserving the existing cookie-based auth model. A separate public origin would need a new decision covering cookies, CORS, and credentials.
+- **Tooling:** no Docker, MinIO, or Makefile in the fresh implementation. Use Bun scripts; developers provide Postgres, and storage configuration points to R2 or an explicitly configured test endpoint.
+- **Reset point:** the previous Go and frontend scaffolds, migrations, and local infrastructure files have been removed. Ticket #7 establishes the Bun/TypeScript foundation; product stories and data model remain in scope.
 
 ## Locked decisions
 
@@ -34,6 +42,5 @@ Cover photo; likes / comments / guestbook / hashtags; live slideshow / TV displa
 ## Open items (tracked as GitHub tickets under the wayfinder map)
 
 - **Name the app** — deferred (resolved 2025-07-18). Stick with "EventLens" (working name) and `unnamed` repo. Frontrunner "Kala" (KBBI: moment); revisit post-MVP.
-- **Hosting topology** (`wayfinder:grilling`) — where the Go server, Postgres, and object storage + CDN live. Doesn't block building code; blocks going live.
 - **Image resolution tiers** (`wayfinder:research`) — how professionals serve responsive multi-level images (`/low` `/med` `/high`); refine beyond the MVP's 2-version approach. Doesn't block the MVP.
 - **Two-window lifecycle solid implementation** (`wayfinder:research`) — incl. the **cron/scheduler** question, auto-deletion mechanics, the USB/physical-handoff business flow, storage-tier durations, and quick-event validation. Doesn't block the MVP.

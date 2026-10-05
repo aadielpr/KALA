@@ -1,4 +1,6 @@
-# Use Echo as the web framework
+# Use Echo as the web framework (superseded)
+
+> **Status: Superseded on 2026-10-05 by [ADR 0008](0008-bun-typescript-separate-frontend.md).** This records the original Go/Echo implementation choice for historical context. The API is being rebuilt in TypeScript on Bun; Echo-specific implementation consequences below no longer apply to the target stack.
 
 The PRD and issue #7 originally said "HTTP server (+ thin router)." During the T1 scaffold grilling we chose **Echo** (a web framework) over stdlib `net/http` or `chi`, for the developer experience of built-in JSON binding, middleware, and error handling on a solo MVP. This over-delivers on "thin router" — issue #7's wording is updated to "web framework."
 

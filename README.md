@@ -2,127 +2,33 @@
 
 A web app for collecting photos from event guests into one shared gallery.
 
-## Stack
+## Target stack
 
-- **Backend:** Go with the [Echo](https://echo.labstack.com/) web framework
-- **Frontend:** [SolidJS](https://www.solidjs.com/) SPA built with [Vite](https://vitejs.dev/)
+- **Backend:** TypeScript API running on Bun
+- **Frontend:** SolidJS SPA written in TypeScript, built with Vite and Bun
 - **Database:** Postgres
-- **Object storage:** S3-compatible (MinIO for local dev, Cloudflare R2 for production)
-- **Migrations:** [goose](https://github.com/pressly/goose)
-- **Package manager:** [pnpm](https://pnpm.io/)
+- **Object storage:** Cloudflare R2 through its S3-compatible API
+- **Migrations:** SQL migrations through a Bun-compatible runner (to be selected in issue #7)
+- **Package manager and runtime:** Bun
 
-## Prerequisites
+The API and frontend are separate applications. In development, Bun runs the API and Vite serves the frontend in separate processes. In production, Caddy serves the built frontend and routes `/api/*` to the API. The API never serves frontend files or provides an SPA fallback. Both services share one public origin by default so the existing cookie-based sessions remain same-origin.
 
-- Go 1.26+
-- Node.js 22+ (with [pnpm](https://pnpm.io/installation))
-- For local infrastructure, either:
-  - **Docker + Docker Compose** (recommended — runs Postgres and MinIO with one command), or
-  - **Native installs** of Postgres and MinIO on your machine.
+See [ADR 0008](docs/adr/0008-bun-typescript-separate-frontend.md) for the architecture decision and [the PRD](docs/PRD.md) for the MVP scope.
 
-The app does not depend on Docker — it reads connection settings only from environment variables. Docker is just the easiest way to get Postgres and MinIO running. If you already run them natively, skip Docker and point `.env` at your local instances. See [ADR 0002](docs/adr/0002-infrastructure-backend-agnostic.md).
+## Current implementation status
 
-## Quick start
+The previous Go backend, frontend scaffold, migrations, Docker files, and Makefile have been removed so implementation can restart from a clean slate. Product decisions and feature scope remain documented in `DECISIONS.md`, `CONTEXT.md`, the PRD, and ADRs. Issue #7 defines the new Bun/TypeScript scaffold.
 
-1. Copy the example environment file and edit it:
+## Local services
 
-   ```bash
-   cp .env.example .env
-   ```
+No Docker or MinIO setup is included. Developers provide a reachable Postgres and configure the API through environment variables. Object storage uses a configured R2 bucket; the test bucket and credentials are established with the upload implementation. See [ADR 0008](docs/adr/0008-bun-typescript-separate-frontend.md).
 
-   The defaults assume the Docker path (Postgres on port 5433, MinIO on
-   port 9000). If you run Postgres or MinIO natively, edit the relevant
-   values in `.env` to match your setup.
+## Target development flow
 
-2. Install frontend dependencies:
+The refreshed scaffold will provide Bun scripts to install dependencies, start the API and Vite frontend independently (and together), build the frontend, run API integration tests, and apply or roll back SQL migrations. There is no Makefile; the exact scripts and required Bun version are part of issue #7.
 
-   ```bash
-   make web-install
-   ```
+The API and frontend run as separate processes. In production, Caddy serves the frontend build and routes `/api/*` to the API under one public origin.
 
-3. Start the local infrastructure (Postgres and MinIO):
+## Repository layout
 
-   - **With Docker (recommended):**
-
-     ```bash
-     make infra
-     ```
-
-   - **Without Docker:** start your local Postgres and MinIO yourself. The
-     `DATABASE_URL` and `STORAGE_*` values in `.env` must point at them.
-
-4. Apply database migrations:
-
-   ```bash
-   make migrate
-   ```
-
-5. Run the API and the frontend dev server:
-
-   ```bash
-   make dev
-   ```
-
-   The API uses `air` for live reload. The frontend runs the Vite dev server.
-
-6. Check health:
-
-   ```bash
-   curl http://localhost:8080/api/health
-   ```
-
-   Expected response:
-
-   ```json
-   {"status":"ok","db":"reachable"}
-   ```
-
-## Available commands
-
-- `make infra` — start Postgres and MinIO in Docker (optional; skip if you run them natively).
-- `make run` — run the Go API with `air` live reload.
-- `make web-dev` — run the Vite dev server.
-- `make dev` — run both the API and the frontend dev server together.
-- `make web-install` — install frontend dependencies.
-- `make web-build` — build the SPA for production.
-- `make migrate` — apply database migrations.
-- `make migrate-down` — roll back the last migration.
-- `make test` — run all Go tests.
-
-## Tests
-
-`make test` runs the Go suite (`go test -p 1 ./...`). Packages run
-serialized because the suite shares one mutable test Postgres.
-
-DB-backed tests require a real test Postgres via `TEST_DATABASE_URL` and skip
-when it's unset (there is no per-developer default — the PRD requires a real
-DB, not a stand-in):
-
-```bash
-export TEST_DATABASE_URL="postgres://user:pass@localhost:5433/eventlens_test?sslmode=disable"
-make test
-```
-
-Storage tests hit an S3-compatible endpoint via `TEST_STORAGE_*`, defaulting
-to a local MinIO at `http://localhost:9000` with `minioadmin/minioadmin`
-(bring it up with `make infra`, or run MinIO natively).
-
-## Project structure
-
-```
-.
-├── cmd/server/         # Go server entry point
-├── internal/           # Go application code
-│   ├── config/         # Environment configuration
-│   ├── db/             # Postgres connection
-│   ├── handlers/       # HTTP handlers
-│   ├── server/         # Echo server setup
-│   └── storage/        # S3-compatible storage interface
-├── migrations/         # Database migrations
-├── web/                # SolidJS SPA
-│   ├── src/            # Source files
-│   └── dist/           # Build output (served by Go)
-├── docker-compose.yml  # Local infrastructure (Postgres + MinIO)
-├── Dockerfile          # Production container build
-├── Makefile            # Common commands
-└── .air.toml           # Air live-reload configuration
-```
+The repository currently contains product and architecture documentation only. Issue #7 establishes the Bun workspace layout and the separate API and frontend applications.
