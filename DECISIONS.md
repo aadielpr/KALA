@@ -1,4 +1,4 @@
-# EventLens (working name) — MVP Decisions
+# KALA — MVP Decisions
 
 > Source of truth for the MVP build spec. Locked via a grilling session on 2025-07-15. The wayfinder map (`wayfinder:map` issue on GitHub) is an index of open/resolved tickets; the full locked decisions live here, not in the map.
 
@@ -41,6 +41,6 @@ Cover photo; likes / comments / guestbook / hashtags; live slideshow / TV displa
 
 ## Open items (tracked as GitHub tickets under the wayfinder map)
 
-- **Name the app** — deferred (resolved 2025-07-18). Stick with "EventLens" (working name) and `unnamed` repo. Frontrunner "Kala" (KBBI: moment); revisit post-MVP.
+- **Name the app** — resolved 2026-10-05: **KALA**. Keep `unnamed` as the repository name.
 - **Image resolution tiers** (`wayfinder:research`) — how professionals serve responsive multi-level images (`/low` `/med` `/high`); refine beyond the MVP's 2-version approach. Doesn't block the MVP.
 - **Two-window lifecycle solid implementation** (`wayfinder:research`) — incl. the **cron/scheduler** question, auto-deletion mechanics, the USB/physical-handoff business flow, storage-tier durations, and quick-event validation. Doesn't block the MVP.

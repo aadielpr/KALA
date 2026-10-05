@@ -1,4 +1,4 @@
-# EventLens
+# KALA
 
 A web app centered on the **event** (not the user) that lets an organizer collect guests' photos into one shared gallery. No accounts, no email, no social graph. The event is the center.
 

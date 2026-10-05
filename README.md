@@ -1,4 +1,4 @@
-# EventLens
+# KALA
 
 A web app for collecting photos from event guests into one shared gallery.
 

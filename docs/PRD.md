@@ -1,4 +1,4 @@
-# EventLens (working name) — MVP PRD
+# KALA — MVP PRD
 
 > Published spec for the MVP build. Synthesizes `DECISIONS.md` (the locked grilling decisions) and the closed wayfinder research tickets (#3, #4, #5). The wayfinder map (#1) is the decision artifact; this is the build spec.
 
@@ -172,7 +172,7 @@ See `DECISIONS.md` "Out of scope" and the map's "Out of scope" section: cover ph
 - **Permanent boundary:** this is not a social network — no followers, following, DMs, or influencer-style profiles.
 - Frontend automated tests (deferred to when the API seam stops being enough).
 - Proving at a real ~200-guest event (that's the step *after* MVP live).
-- Post-MVP fog tracked in the wayfinder map's "Not yet specified": app naming/"Kala", business model/pricing, which AI features come first, multi-event organizer accounts, quick-event product concept, on-the-fly vs pre-gen image processing as a standalone decision (it'll be folded into the upload slice).
+- Post-MVP fog tracked in the wayfinder map's "Not yet specified": business model/pricing, which AI features come first, multi-event organizer accounts, quick-event product concept, on-the-fly vs pre-gen image processing as a standalone decision (it'll be folded into the upload slice).
 
 ## Further Notes
 
